@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Create preview Deployment
-      uses: astronomer/deploy-action@v0.12.0
+      uses: astronomer/deploy-action@v0.13
       continue-on-error: true  # Create action fails if deploy preview already exist, which is expected for subsequent commits in the PR
       with:
         action: create-deployment-preview
@@ -22,7 +22,7 @@ jobs:
         workspace: ${{ secrets.ASTRO_WORKSPACE_ID }}
         wait-time: 10m # Max wait time for the preview deployment to be completed by the deploy action. The workflow will fail if the deployment fails to create within give time period.
     - name: Deploy code to preview
-      uses: astronomer/deploy-action@v0.12.0
+      uses: astronomer/deploy-action@v0.13
       with:
         action: deploy-deployment-preview
         deployment-id: cmn5wicbg0z2t01kyiw3bqatp
