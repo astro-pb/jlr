@@ -1,0 +1,20 @@
+name: Astronomer CI - Deploy code to main Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  ## Set your API token as a GitHub secret
+  ASTRO_API_TOKEN: ${{ secrets.ASTRO_API_TOKEN }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy code to main Deployment
+      uses: astronomer/deploy-action@v0.12.0
+      with:
+        deployment-id: cmn5wicbg0z2t01kyiw3bqatp
+        workspace: ${{ secrets.ASTRO_WORKSPACE_ID }}
