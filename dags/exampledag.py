@@ -2,17 +2,13 @@
 ## Astronaut ETL example DAG
 
 This DAG queries the list of astronauts currently in space from the
-Open Notify API and prints each astronaut's name and flying craft.
+Open Notify API, prints each astronaut's name and flying craft, and
+generates a summary report grouped by craft.
 
-There are two tasks, one to get the data from the API and save the results,
-and another to print the results. Both tasks are written in Python using
-Airflow's TaskFlow API, which allows you to easily turn Python functions into
-Airflow tasks, and automatically infer dependencies and pass data.
-
-The second task uses dynamic task mapping to create a copy of the task for
-each Astronaut in the list retrieved from the API. This list will change
-depending on how many Astronauts are in space, and the DAG will adjust
-accordingly each time it runs.
+There are three tasks:
+1. Get astronaut data from the API
+2. Print each astronaut's details using dynamic task mapping
+3. Generate a summary report with astronaut counts per craft
 
 For more explanation and getting started instructions, see our Write your
 first DAG tutorial: https://www.astronomer.io/docs/learn/get-started-with-airflow
@@ -23,9 +19,9 @@ first DAG tutorial: https://www.astronomer.io/docs/learn/get-started-with-airflo
 from airflow.sdk import Asset, dag, task
 from pendulum import datetime
 import requests
+from collections import defaultdict
 
 
-# Define the basic parameters of the DAG, like schedule and start_date
 @dag(
     start_date=datetime(2025, 4, 22),
     schedule="@daily",
@@ -34,11 +30,9 @@ import requests
     tags=["example"],
 )
 def example_astronauts():
-    # Define tasks
     @task(
-        # Define an asset outlet for the task. This can be used to schedule downstream DAGs when this task has run.
         outlets=[Asset("current_astronauts")]
-    )  # Define that this task updates the `current_astronauts` Asset
+    )
     def get_astronauts(**context) -> list[dict]:
         """
         This task uses the requests library to retrieve a list of Astronauts
@@ -85,14 +79,48 @@ def example_astronauts():
         craft = person_in_space["craft"]
         name = person_in_space["name"]
 
-        print(f"{name} is currently in England flying on the {craft}! {greeting}")
+        print(f"{name} is currently in space flying on the {craft}! {greeting}")
 
-    # Use dynamic task mapping to run the print_astronaut_craft task for each
-    # Astronaut in space
+    @task(
+        outlets=[Asset("astronaut_summary_report")]
+    )
+    def generate_summary_report(astronauts: list[dict]) -> dict:
+        """
+        Generates a summary report of astronauts grouped by craft,
+        including counts and crew member names per craft.
+        """
+        craft_groups = defaultdict(list)
+        for person in astronauts:
+            craft_groups[person["craft"]].append(person["name"])
+
+        craft_summary = [
+            {"craft": craft, "count": len(names), "crew_members": names}
+            for craft, names in craft_groups.items()
+        ]
+
+        report = {
+            "total_astronauts": len(astronauts),
+            "total_crafts": len(craft_groups),
+            "craft_summary": craft_summary,
+        }
+
+        for craft_info in craft_summary:
+            print(
+                f"{craft_info['craft']}: {craft_info['count']} astronauts "
+                f"- {', '.join(craft_info['crew_members'])}"
+            )
+
+        print(f"\nTotal: {report['total_astronauts']} astronauts across {report['total_crafts']} crafts")
+
+        return report
+
+    astronauts = get_astronauts()
+
     print_astronaut_craft.partial(greeting="Hello! :)").expand(
-        person_in_space=get_astronauts()  # Define dependencies using TaskFlow API syntax
+        person_in_space=astronauts
     )
 
+    generate_summary_report(astronauts=astronauts)
 
-# Instantiate the DAG
+
 example_astronauts()
