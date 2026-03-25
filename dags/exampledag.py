@@ -55,7 +55,7 @@ def example_astronauts():
             print("API currently not available, using hardcoded data instead.")
             number_of_people_in_space = 12
             list_of_people_in_space = [
-                {"craft": "ISS", "name": "Jack Kononenko"},
+                {"craft": "ISS", "name": "Tom Kononenko"},
                 {"craft": "ISS", "name": "Nikolai Chub"},
                 {"craft": "ISS", "name": "Tracy Caldwell Dyson"},
                 {"craft": "ISS", "name": "Matthew Dominick"},
